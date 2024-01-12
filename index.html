@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokédex</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #649630; /* Verde Grama */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    #pokedex {
+      background-color: #cf1e38; /* Vermelho Mais Fraco */
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      width: 300px; /* Aumentei a largura para 300px */
+      text-align: center;
+    }
+
+    #pokemon-info {
+      padding: 20px;
+    }
+
+    #pokemon-image {
+      width: 100%;
+    }
+
+    #search-bar {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+    }
+
+    #pokemon-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      overflow-y: scroll;
+      max-height: 400px;
+      background-color: #ffffff; /* Branco */
+    }
+
+    .pokemon-item {
+      padding: 10px;
+      border-bottom: 1px solid #f11919;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .pokemon-item img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    .pokemon-item span {
+      margin-top: 5px;
+    }
+
+    .pokemon-item:hover {
+      background-color: #f11919;
+    }
+  </style>
+</head>
+<body>
+
+<div id="pokedex">
+  <div id="pokemon-info">
+    <h2 id="pokemon-name">Clique em um Pokémon</h2>
+    <img id="pokemon-image" src="" alt="">
+  </div>
+  <input type="text" id="search-bar" placeholder="Pesquisar por nome" oninput="filterPokemonList()">
+  <ul id="pokemon-list"></ul>
+</div>
+
+<script>
+  async function fetchPokemonList() {
+    try {
+      const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=721'); // Incluindo Pokémon das seis primeiras gerações
+      const data = await response.json();
+      return data.results;
+    } catch (error) {
+      console.error('Erro ao obter a lista de Pokémon:', error);
+    }
+  }
+
+  async function fetchPokemonDetails(url) {
+    try {
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao obter detalhes do Pokémon:', error);
+    }
+  }
+
+  async function createPokemonListItem(pokemon) {
+    const listItem = document.createElement('li');
+    listItem.className = 'pokemon-item';
+
+    const pokemonIcon = document.createElement('img');
+    pokemonIcon.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.url.split("/")[6]}.png`;
+    pokemonIcon.alt = pokemon.name;
+
+    listItem.appendChild(pokemonIcon);
+
+    const pokemonName = document.createElement('span');
+    pokemonName.textContent = await getPokemonName(pokemon.url);
+    listItem.appendChild(pokemonName);
+
+    listItem.addEventListener('click', () => loadPokemonDetails(pokemon.url));
+    return listItem;
+  }
+
+  async function getPokemonName(url) {
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.name;  // Corrigido para obter o nome diretamente
+    } catch (error) {
+      console.error('Erro ao obter o nome do Pokémon:', error);
+      return 'Nome não disponível';
+    }
+  }
+
+  function loadPokemonDetails(url) {
+    fetchPokemonDetails(url)
+      .then(data => {
+        document.getElementById('pokemon-name').innerText = data.name;
+        document.getElementById('pokemon-image').src = data.sprites.front_default;
+      })
+      .catch(error => console.error('Erro:', error));
+  }
+
+  async function initializePokedex() {
+    const pokemonList = await fetchPokemonList();
+    const pokemonListElement = document.getElementById('pokemon-list');
+
+    for (const pokemon of pokemonList) {
+      const listItem = await createPokemonListItem(pokemon);
+      pokemonListElement.appendChild(listItem);
+    }
+  }
+
+  function filterPokemonList() {
+    const searchInput = document.getElementById('search-bar').value.toLowerCase();
+    const pokemonList = document.getElementById('pokemon-list');
+    const pokemonItems = pokemonList.getElementsByClassName('pokemon-item');
+
+    for (const item of pokemonItems) {
+      const itemName = item.querySelector('span').textContent.toLowerCase();
+      if (itemName.includes(searchInput)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    }
+  }
+
+  initializePokedex();
+</script>
+
+</body>
+</html>
